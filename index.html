@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ECO-LIFE LAB | Digital Simulation</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .eco-bg { background: linear-gradient(135deg, #064e3b 0%, #065f46 100%); }
+        .tab-active { border-bottom: 4px solid #fbbf24; color: #fbbf24; font-weight: bold; }
+        .glass-panel { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.3); }
+    </style>
+</head>
+<body class="bg-gray-50 text-slate-800">
+
+    <header class="eco-bg text-white shadow-2xl p-6 sticky top-0 z-50">
+        <div class="container mx-auto flex flex-col md:flex-row justify-between items-center">
+            <div>
+                <h1 class="text-3xl font-black tracking-tight">ECO-LIFE LAB</h1>
+                <p class="text-xs opacity-75 uppercase tracking-widest">Phòng thí nghiệm công nghệ số & Hệ thống mô phỏng sinh thái</p>
+            </div>
+            <nav class="flex space-x-6 mt-4 md:mt-0 overflow-x-auto">
+                <button onclick="changeEco('forest')" id="btn-forest" class="pb-2 tab-active transition-all">Rừng nguyên sinh</button>
+                <button onclick="changeEco('ocean')" id="btn-ocean" class="pb-2 opacity-60 hover:opacity-100 transition-all">Hệ sinh thái biển</button>
+                <button onclick="changeEco('urban')" id="btn-urban" class="pb-2 opacity-60 hover:opacity-100 transition-all">Đô thị xanh</button>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container mx-auto py-10 px-4 grid grid-cols-1 lg:grid-cols-12 gap-8">
+        
+        <section class="lg:col-span-4 space-y-6">
+            <div class="glass-panel p-8 rounded-3xl shadow-xl">
+                <h2 id="eco-title" class="text-2xl font-bold text-emerald-900 mb-6">Quản trị Rừng nguyên sinh</h2>
+                
+                <div class="space-y-8">
+                    <div>
+                        <div class="flex justify-between mb-2">
+                            <label id="label-1" class="font-bold text-slate-700">Tốc độ khai thác gỗ</label>
+                            <span id="v1-val" class="text-emerald-600 font-bold">10%</span>
+                        </div>
+                        <input type="range" id="input-1" min="0" max="100" value="10" class="w-full h-2 bg-emerald-100 rounded-lg appearance-none cursor-pointer accent-emerald-600">
+                    </div>
+
+                    <div>
+                        <div class="flex justify-between mb-2">
+                            <label id="label-2" class="font-bold text-slate-700">Đầu tư bảo tồn</label>
+                            <span id="v2-val" class="text-blue-600 font-bold">50%</span>
+                        </div>
+
+/-strong
+/-heart
+:>
+:o
+:-((
+:-h
+<input type="range" id="input-2" min="0" max="100" value="50" class="w-full h-2 bg-blue-100 rounded-lg appearance-none cursor-pointer accent-blue-600">
+                    </div>
+                </div>
+
+                <div class="mt-8 p-6 bg-emerald-50 rounded-2xl border-l-8 border-emerald-500">
+                    <p class="text-xs font-black text-emerald-800 uppercase tracking-widest mb-2">AI Cố vấn</p>
+                    <p id="ai-msg" class="text-sm text-emerald-900 italic leading-relaxed">Đang phân tích kịch bản...</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="lg:col-span-8 space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                    <p class="text-slate-500 text-xs font-bold uppercase">Nồng độ CO2</p>
+                    <p id="co2-text" class="text-3xl font-black text-rose-600">410 ppm</p>
+                </div>
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                    <p class="text-slate-500 text-xs font-bold uppercase">Đa dạng sinh học</p>
+                    <p id="bio-text" class="text-3xl font-black text-emerald-600">95%</p>
+                </div>
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                    <p class="text-slate-500 text-xs font-bold uppercase">Biến đổi nhiệt</p>
+                    <p id="temp-text" class="text-3xl font-black text-orange-500">+1.1°C</p>
+                </div>
+            </div>
+
+            <div class="bg-white p-8 rounded-3xl shadow-lg border border-slate-100">
+                <h3 class="font-bold text-slate-800 mb-4">Biểu đồ mô phỏng hệ quả</h3>
+                <div class="h-[400px]">
+                    <canvas id="mainChart"></canvas>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        let currentTab = 'forest';
+        const ctx = document.getElementById('mainChart').getContext('2d');
+        
+        const dataConfig = {
+            forest: { title: "Rừng nguyên sinh", l1: "Tốc độ khai thác gỗ", l2: "Đầu tư bảo tồn", color: "#10b981" },
+            ocean: { title: "Hệ sinh thái biển", l1: "Sản lượng đánh bắt", l2: "Chính sách rác thải", color: "#0ea5e9" },
+            urban: { title: "Đô thị xanh", l1: "Mật độ xây dựng", l2: "Năng lượng tái tạo", color: "#8b5cf6" }
+        };
+
+        let mainChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ['Năm 0', 'Năm 5', 'Năm 10', 'Năm 15', 'Năm 20'],
+                datasets: [{ label: 'Độ ổn định hệ sinh thái (%)', data: [90, 85, 80, 75, 70], borderColor: '#10b981', fill: true, backgroundColor: 'rgba(16, 185, 129, 0.1)', tension: 0.4 }]
+            },
+options: { responsive: true, maintainAspectRatio: false }
+        });
+
+        function changeEco(tab) {
+            currentTab = tab;
+            document.querySelectorAll('nav button').forEach(b => b.classList.remove('tab-active', 'opacity-100'));
+            document.getElementById('btn-' + tab).classList.add('tab-active');
+            
+            document.getElementById('eco-title').innerText = "Quản trị " + dataConfig[tab].title;
+            document.getElementById('label-1').innerText = dataConfig[tab].l1;
+            document.getElementById('label-2').innerText = dataConfig[tab].l2;
+            
+            mainChart.data.datasets[0].borderColor = dataConfig[tab].color;
+            updateLogic();
+        }
+
+        function updateLogic() {
+            const s1 = parseInt(document.getElementById('input-1').value);
+            const s2 = parseInt(document.getElementById('input-2').value);
+            document.getElementById('v1-val').innerText = s1 + "%";
+            document.getElementById('v2-val').innerText = s2 + "%";
+
+            let co2, bio, temp, msg;
+
+            if(currentTab === 'forest') {
+                co2 = 400 + (s1 * 1.5) - (s2 * 0.5);
+                bio = 100 - (s1 * 0.8) + (s2 * 0.2);
+                msg = s1 > 60 ? "Cảnh báo: Phá rừng làm giảm khả năng hấp thụ Carbon mạnh mẽ!" : "Khu vực rừng đang phát triển ổn định.";
+            } else if(currentTab === 'ocean') {
+                co2 = 410 + (s1 * 0.3);
+                bio = 95 - (s1 * 0.6) - ( (100-s2) * 0.3);
+                msg = s2 < 30 ? "Ô nhiễm nhựa đang phá hủy rạn san hô! Hãy tăng chính sách rác thải." : "Đại dương đang được bảo vệ tốt.";
+            } else {
+                co2 = 430 + (s1 * 1.2) - (s2 * 1.8);
+                bio = 50 - (s1 * 0.4) + (s2 * 0.6);
+                msg = s2 > 70 ? "Thành phố đạt chứng chỉ xanh nhờ năng lượng sạch!" : "Hiệu ứng đảo nhiệt đô thị đang tăng cao.";
+            }
+
+            temp = 1.0 + (co2 - 400)/100;
+
+            document.getElementById('co2-text').innerText = co2.toFixed(0) + " ppm";
+            document.getElementById('bio-text').innerText = Math.max(0, bio).toFixed(0) + "%";
+            document.getElementById('temp-text').innerText = "+" + temp.toFixed(2) + "°C";
+            document.getElementById('ai-msg').innerText = "AI Mentor: " + msg;
+
+            mainChart.data.datasets[0].data = [bio, bio - 2, bio - 5, bio - 1, bio];
+            mainChart.update('none');
+        }
+
+        document.getElementById('input-1').addEventListener('input', updateLogic);
+        document.getElementById('input-2').addEventListener('input', updateLogic);
+        
+        updateLogic();
+    </script>
+</body>
+</html>
+
